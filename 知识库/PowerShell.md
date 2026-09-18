@@ -59,6 +59,12 @@ $plain2 = [System.Text.Encoding]::UTF8.GetString(
   `Start-Process -FilePath … -ArgumentList … -WindowStyle Hidden -RedirectStandardOutput/-Error`，
   进程能活过当前会话，输出还落盘。
 
+## 给原生命令传「空字符串」：别用 `''`，会被当成两个引号字符
+
+PowerShell 5.1 调原生命令时，`& exe -N ''` 传过去的其实是**字面的两个单引号**（`''`），不是空字符串。
+实例：`ssh-keygen -t ed25519 -N '' ...` 本意是"不设口令"，结果钥匙照样带口令（那把钥匙后来直接不可用）。
+可靠做法：用 `cmd /c` 包一层，写 `-N ""`；或者干脆把命令写进 `.cmd` 脚本（记得纯 ASCII）再执行。
+
 ## 脚本里要引用中文目录：用字符码拼，别直接写中文
 
 即使守着「脚本只写 ASCII」，也常需要落到中文目录（如 `产物\logs`）。
