@@ -55,3 +55,44 @@ CLI 报错里可能带 `cli_xxxx` 形式的 App ID，往聊天里回显前先做
 
 实测：审批请求里带 `command`、`cwd`、`reason`（中文原因），直接转发给用户即可；
 用户回「允许」后命令真的执行、回「拒绝」后命令不执行且模型会明确说被拒绝。
+
+## 联网搜索：`--search` 是顶层参数，`exec` 里用 `-c web_search="live"`
+
+`codex exec --search ...` 会报 `tip: to pass '--search' as a value, use '-- --search'`——因为
+`--search`（Enable live web search）**只挂在 `codex` 顶层**。在 `exec` 里开实时搜索要写成：
+
+```powershell
+codex exec --json -c web_search="live" "你的问题"
+```
+
+**看有没有真的搜**：输出里应有 `{"type":"item.completed","item":{"type":"web_search",...,"action":{"type":"search","queries":[...]}}}`。
+2026-09-18 实测：走自定义提供方（DeepSeek 中转）**也能出真实搜索**，不是只有官方通道才行。
+
+## 插件：配置里 `enabled = true` ≠ 装好了
+
+只在 `config.toml` 里写 `[plugins."chrome@openai-bundled"] enabled = true`，加载器会报：
+
+```
+failed to load plugin: plugin is not installed plugin="chrome@openai-bundled"
+```
+
+正确做法（CLI 自带插件管理）：
+
+```powershell
+codex plugin list                       # 看 STATUS，要显示 installed, enabled
+codex plugin add chrome@openai-bundled   # 从已配置的 marketplace 安装到 ~\.codex\plugins\cache\
+codex plugin remove <插件>               # 卸载
+codex plugin marketplace list            # 看有哪些 marketplace
+```
+
+`chrome` / `computer-use` 这类插件还需要**浏览器侧的 ChatGPT 扩展**才真的能用。本机只装了 Edge，
+扩展 ID：Chrome 商店 `hehggadaopoacecdllhhajmbjkdcmajg`、Edge 商店 `odlomjlbamekndcpllcnffbgeohgkmjh`。
+自查脚本在插件目录里：`scripts\installed-browsers.js`（本机装了哪些浏览器）、
+`scripts\check-extension-installed.js`（扩展装没装）。
+
+## 会话沙箱里跑 codex 要先给 home
+
+沙箱账户没有家目录，直接跑 `codex ...` 会 `Error finding codex home` / `attempt to write a readonly database`。
+两个办法：提权（以用户身份跑），或临时设
+`$env:USERPROFILE='C:\Users\22707'; $env:HOME='C:\Users\22707'; $env:CODEX_HOME='C:\Users\22707\.codex'`
+——但写 `state_5.sqlite` 仍会失败，**验证插件/搜索这类要写状态的，直接提权**。
