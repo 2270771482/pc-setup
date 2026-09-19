@@ -27,7 +27,7 @@ try {
     Write-Host ('report: ' + $out)
     exit 1
 }
-function Data([object]$e) {
+function GetEvData([object]$e) {
     $x = [xml]$e.ToXml()
     $d = @{}
     foreach ($n in $x.Event.EventData.Data) { if ($n.Name) { $d[$n.Name] = $n.'#text' } }
@@ -36,7 +36,7 @@ function Data([object]$e) {
 $boots = $ev | Where-Object { $_.Id -eq 100 } | Select-Object -First 10
 L '--- boot events (newest first) ---'
 foreach ($e in $boots) {
-    $d = Data $e
+    $d = GetEvData $e
     L ('[100] ' + $e.TimeCreated.ToString('MM-dd HH:mm:ss') +
        '  total=' + [math]::Round([double]$d.BootTime / 1000, 1) + 's' +
        '  mainPath=' + [math]::Round([double]$d.MainPathBootTime / 1000, 1) + 's' +
@@ -51,7 +51,7 @@ if ($latest) {
     foreach ($e in $ev) {
         if ($e.Id -in 101, 103, 109) {
             if ([math]::Abs(($e.TimeCreated - $t0).TotalMinutes) -lt 15) {
-                $d = Data $e
+                $d = GetEvData $e
                 $ms = 0
                 if ($d.TotalTime) { $ms = [int]$d.TotalTime }
                 if ($ms -ge 1000) { $rows += [pscustomobject]@{ Time = $e.TimeCreated; Id = $e.Id; Name = $d.Name; Ms = $ms } }

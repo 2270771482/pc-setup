@@ -94,3 +94,14 @@ $env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' +
 
 若 shim 已执行但 Node 报 `Cannot find module`，说明目标运行时不在旧进程可访问范围内；
 把运行时复制到 shim 同目录，并改成 `%~dp0<runtime>\...` 的相对调用，做成自包含。
+
+## 别拿保留字当函数名：`Data`、`Filter`、`Process` 都会被解析器抢走
+
+写了个 `function Data([object]$e) { ... }` 来拆事件 XML，脚本直接报
+`Data 节缺少自己的语句块 (MissingStatementBlockForDataSection)` ——
+因为 **`data` 是 PowerShell 的保留关键字**（`data { ... }` 数据段），
+定义和调用处都被解析成数据段，整脚本挂掉。
+
+同类保留字别用：`data`、`filter`、`process`、`begin`、`end`、`param`、`function`……
+命名加个动词前缀就躲开了（`GetEvData`）。**改完先用 `-NoProfile -File` 空跑一遍验证语法**，
+别等到提权跑完才发现解析错误——那次用户白点了两次 UAC。
