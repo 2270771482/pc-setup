@@ -105,3 +105,22 @@ $env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' +
 同类保留字别用：`data`、`filter`、`process`、`begin`、`end`、`param`、`function`……
 命名加个动词前缀就躲开了（`GetEvData`）。**改完先用 `-NoProfile -File` 空跑一遍验证语法**，
 别等到提权跑完才发现解析错误——那次用户白点了两次 UAC。
+
+## 两条终端不是同一个 PowerShell（用户问过："为什么你自己跑就没这么多事"）
+
+2026-09-19 实测对比（**这不是权限差异，两边都是普通用户 22707、都没提权**）：
+
+| | 我这边（Codex 派生的命令） | 用户右键「在终端中打开」 |
+|---|---|---|
+| 程序 | `pwsh` **7.6.5 (Core)** | `powershell.exe` **5.1.26100**（系统自带） |
+| 位置 | `C:\Users\22707\.cache\codex-runtimes\codex-primary-runtime\dependencies\native\powershell\pwsh.exe`（**Codex 自带，不是系统安装**） | `C:\Windows\System32\WindowsPowerShell\v1.0\` |
+| PATH | Codex 启动那一刻的快照，头部塞满它自带的运行时（poppler、libheif…） | 用户/系统 PATH 的当前值 |
+| 沙箱 | 默认可写范围只有 `D:\AI`，碰别处要申请提权 | 无沙箱 |
+| 加载 | `-NoProfile` 式、非交互，输出被捕获 | 交互、可读写自己的目录 |
+
+Windows Terminal 的默认配置文件就是 **Windows PowerShell（5.1）**，所以用户看到的是 5.1 的行为：
+`.cmd` 按 GBK 读、没有 `??`/`-Parallel` 一类新语法、`ConvertFrom-Json` 老版本行为不同。
+**判断"这条命令该按哪个版本写"时，先看是谁在跑。**
+
+想两边一致，可选：装一个系统级 PowerShell 7（`winget install Microsoft.PowerShell`），
+再在 Windows Terminal 里加一个 pwsh 配置档——**装机清单里没有它，装之前要问用户**。
