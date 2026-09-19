@@ -122,5 +122,21 @@ Windows Terminal 的默认配置文件就是 **Windows PowerShell（5.1）**，�
 `.cmd` 按 GBK 读、没有 `??`/`-Parallel` 一类新语法、`ConvertFrom-Json` 老版本行为不同。
 **判断"这条命令该按哪个版本写"时，先看是谁在跑。**
 
-想两边一致，可选：装一个系统级 PowerShell 7（`winget install Microsoft.PowerShell`），
-再在 Windows Terminal 里加一个 pwsh 配置档——**装机清单里没有它，装之前要问用户**。
+**2026-09-19 已按用户要求统一**：装了系统级 PowerShell 7 并把它设成 Windows Terminal 的默认配置档。
+装的时候踩到的点，重装时会再遇到：
+
+- **装之前先开代理**。`winget install --id Microsoft.PowerShell --exact` 会从 GitHub 拉包，
+  国内直连报 `InternetOpenUrl() failed. 0x80072efd`。Clash Verge 起来（系统代理）之后一次就过。
+- winget 给的 `--proxy http://127.0.0.1:7897` 这种写法**我们的 winget 1.29 不认**（会直接打印帮助），
+  靠系统代理即可，别再试这个参数。
+- **winget 装的是 Store/MSIX 版，不是 MSI**：落点是
+  `C:\Program Files\WindowsApps\Microsoft.PowerShell_<版本>_x64__8wekyb3d8bbwe`，
+  `pwsh` 通过别名 `%LOCALAPPDATA%\Microsoft\WindowsApps\pwsh.exe` 暴露。
+  所以**别去 `C:\Program Files\PowerShell\7\pwsh.exe` 找**（那是 MSI 版的位置，装 MSIX 时不存在）。
+- **Windows Terminal 的配置档要自己加**（别指望自动生成）：在
+  `%LOCALAPPDATA%\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json` 的
+  `profiles.list` 里加一条，**GUID 用 `{574e775e-4f2a-5b96-ac1e-a2962a402336}`**
+  （这是 WT 给 PowerShell Core 预留的动态配置档 GUID，用同一个会覆盖它、不会出现两个重名条目），
+  commandline 写 `%LOCALAPPDATA%\Microsoft\WindowsApps\pwsh.exe`；再把 `defaultProfile` 指过去。
+  改前备份；**WT 在运行时可能回写设置，改之前先确认 `Get-Process WindowsTerminal` 是空的**；
+  写回要用**无 BOM 的 UTF-8**（`[IO.File]::WriteAllText($p,$s,(New-Object Text.UTF8Encoding($false)))`）。
