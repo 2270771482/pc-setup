@@ -20,6 +20,22 @@
 **踩过的坑**：以为「提权」就等于管理员，直接跑 `Set-Service`/`Stop-Service`，被静默拒绝（白跑一次）。
 需要管理员的活一律走 UAC 脚本。
 
+### 更正（2026-09-19 实测）：会话里 **发不起 UAC**，别指望 `Start-Process -Verb RunAs`
+
+实测结论：从 Codex 会话（沙箱或 `require_escalated` 都一样）执行
+`Start-Process powershell -Verb RunAs ...`，**屏幕上不会弹出 UAC 窗口**：
+用户已经点了两次都没反应，`consent.exe` 从未出现、提权子进程也没起来。
+原因推测是这类命令跑在非交互的窗口站/桌面上，安全桌面的同意界面弹不出来（连试两次、两种写法都一样）。
+本机 UAC 本身是正常开的（`EnableLUA=1`、`ConsentPromptBehaviorAdmin=5`、`PromptOnSecureDesktop=1`）。
+
+**要管理员权限的活，正确做法**：写一个 ASCII 内容的 `.cmd`（内容里不要出现中文路径——
+考虑用 `Get-Item 'D:\AI\*\boot-time-report.ps1'` 这种通配符绕开中文目录），
+让用户**右键 → 以管理员身份运行**。实例：`工具\量开机耗时.cmd`。
+
+另一个由此发现的事实：**日常账户 22707 在 Administrators 组里，但 Codex 拿到的令牌是过滤后的**，
+所以 `IsInRole(Administrator)` 恒为 `False`，`Win32_Process`/服务/事件日志里但凡标着"需要管理员"的都读不到——
+典型例子：`Microsoft-Windows-Diagnostics-Performance/Operational`（开机耗时日志）**必须管理员才能读**。
+
 ## 沙箱内不能移动/重命名文件
 
 实测：沙箱身份可以创建、修改、删除 `D:\AI` 里的文件，但 `Move-Item` 会静默失败。
