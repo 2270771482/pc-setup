@@ -3,7 +3,7 @@
 
 用法：python D:\\AI\\脚本\\发布私有仓.py
 
-做三件事：把根目录的 状态.md / 决策记录 / 任务 复制进 private，
+做三件事：把 状态.md / 决策记录 / 任务.md / 文档\重装清单.md 复制进 private，
 在 private 里提交，然后推到私有仓。没有变化时不提交也不推。
 """
 from __future__ import annotations
@@ -21,7 +21,7 @@ except Exception:
 
 ROOT = r"D:\AI"
 PRIV = os.path.join(ROOT, "private")
-ITEMS = ["状态.md", "决策记录", "任务.md"]
+ITEMS = ["状态.md", "决策记录", "任务.md", os.path.join("文档", "重装清单.md")]
 
 
 def git(*args: str) -> subprocess.CompletedProcess[str]:
@@ -47,6 +47,7 @@ def main() -> int:
             shutil.copytree(src, dst, ignore=shutil.ignore_patterns("__pycache__"))
             print("复制目录 " + name)
         elif os.path.isfile(src):
+            os.makedirs(os.path.dirname(dst), exist_ok=True)
             shutil.copy2(src, dst)
             print("复制文件 " + name)
         else:
