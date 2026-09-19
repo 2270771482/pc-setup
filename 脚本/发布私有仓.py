@@ -21,7 +21,7 @@ except Exception:
 
 ROOT = r"D:\AI"
 PRIV = os.path.join(ROOT, "private")
-ITEMS = ["状态.md", "决策记录", "任务"]
+ITEMS = ["状态.md", "决策记录", "任务.md"]
 
 
 def git(*args: str) -> subprocess.CompletedProcess[str]:
