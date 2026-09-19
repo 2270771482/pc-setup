@@ -92,12 +92,17 @@ def render() -> tuple[str, list[str]]:
         claim = load_claim(item["ID"])
         owner = claim.get("会话", "（未认领）") if claim else "（未认领）"
         state = "进行中" if claim else item["状态"]
+        needs = item.get("需用户先定", "").strip()
+        if needs and needs not in ("无", "-", "否"):
+            next_step = f"**❗等你定**：{needs} ｜ {item['下一步']}"
+        else:
+            next_step = item["下一步"]
         lines.append(
             "| " + " | ".join(
                 safe_cell(value)
                 for value in (
                     item["ID"], item.get("标题", item["文件"]), state, owner,
-                    item["优先级"], item["最后更新"], item["下一步"],
+                    item["优先级"], item["最后更新"], next_step,
                 )
             ) + " |"
         )
