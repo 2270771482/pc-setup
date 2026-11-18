@@ -158,3 +158,23 @@ codex plugin marketplace list            # 看有哪些 marketplace
 
 见本文档上面的「Codex CLI（非交互调用）」一节（JSONL-RPC、thread/turn 方法、审批请求的回法）。
 
+## DSH 插件开发（2026-10-21 实测）
+
+一个插件 = **host 半** + **client 半**，两半各自独立注册：
+
+- host 半：`package.json` 的 `main` 指向 ESM 模块，导出 `name / inject / apply(ctx)`
+- client 半：`package.json` 里 `exports["./client"]` + `dsh.client = { platform: 'web' }`，
+  该文件是 `window.__ModuleLoader__.load({ id: <包名>, factory: (require) => ({ name, inject, apply }) })`
+  ——单文件、不用打包；只 `require('react')` 这类基线模块
+- 界面靠 **slot**（`ctx.slots.inject(key, () => ctx.slots.register({name, key}, Component))`），
+  加标签的三条通道：右侧停靠面 `ctx.sidebarRightTabs.register` + `sidebar.right.pane.tab`、
+  主区标签 `conversation.view`（list slot）、全屏 `shell.overlay`
+
+**装本地插件**（没有 `dsh` CLI 时手工等价）：profile 的 `package.json`
+`dependencies["<包名>"] = "file:D:/路径"` + `dsh.profile.bundles` 末尾加包名，然后在该目录 `pnpm install`；
+插件的 `cordis.patch.yml` 写 `- insert: [{ id, name }]` 把宿主半挂上。改完要**完全退出重开**应用才生效。
+`node_modules/<包名>` 如果是拷贝不是联接，换成目录联接（`New-Item -ItemType Junction`）后改 client 半即可热加载。
+
+官方开发文档不用装插件：`npm pack dsh-plugin-guide` 解开，
+`references/official-docs/docs/subsystems/` 下 `slots` / `sidebar-right` / `client-modules` / `terminal` 四篇最关键。
+

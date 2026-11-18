@@ -1,16 +1,17 @@
 # -*- coding: utf-8 -*-
-"""把私密文件快照发布到私有仓 pc-setup-private。
+"""提交并推送私密仓 pc-setup-private。
 
 用法：python D:\\AI\\脚本\\发布私有仓.py
 
-做三件事：把 状态.md / 决策记录 / 任务.md / 凭据恢复.md 复制进 private，
-在 private 里提交，然后推到私有仓。没有变化时不提交也不推。
+2026-11-18 起，`状态.md` / `任务.md` / `决策记录\\` / `凭据恢复.md` 都**直接住在**
+`D:\\个人\\private`（唯一事实源），不再是"从 D:\\AI 复制过去的快照"，
+所以这个脚本不再复制文件，只负责：看有没有改动 → 提交 → 推送。
+没有变化时它什么都不做。
 """
 from __future__ import annotations
 
 import datetime
 import os
-import shutil
 import subprocess
 import sys
 
@@ -19,9 +20,10 @@ try:
 except Exception:
     pass
 
-ROOT = r"D:\AI"
-PRIV = os.path.join(ROOT, "private")
-ITEMS = ["状态.md", "决策记录", "任务.md", "凭据恢复.md"]
+PRIV = r"D:\个人\private"
+
+# 这里的东西是唯一事实源，不该被"从别处复制"覆盖；列出来只是为了在报错时提示
+EXPECTED = ["状态.md", "任务.md", "决策记录", "凭据恢复.md"]
 
 
 def git(*args: str) -> subprocess.CompletedProcess[str]:
@@ -38,20 +40,9 @@ def main() -> int:
         print("private 还不是 git 仓库：" + PRIV)
         return 1
 
-    for name in ITEMS:
-        src = os.path.join(ROOT, name)
-        dst = os.path.join(PRIV, name)
-        if os.path.isdir(src):
-            if os.path.isdir(dst):
-                shutil.rmtree(dst)
-            shutil.copytree(src, dst, ignore=shutil.ignore_patterns("__pycache__"))
-            print("复制目录 " + name)
-        elif os.path.isfile(src):
-            os.makedirs(os.path.dirname(dst), exist_ok=True)
-            shutil.copy2(src, dst)
-            print("复制文件 " + name)
-        else:
-            print("跳过（不存在）" + name)
+    missing = [n for n in EXPECTED if not os.path.exists(os.path.join(PRIV, n))]
+    if missing:
+        print("警告：private 里缺少 " + "、".join(missing) + "（不阻止提交）")
 
     git("add", "-A")
     status = git("status", "--porcelain")

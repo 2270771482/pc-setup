@@ -67,9 +67,9 @@ PowerShell 5.1 调原生命令时，`& exe -N ''` 传过去的其实是**字面�
 
 ## 脚本里要引用中文目录：用字符码拼，别直接写中文
 
-即使守着「脚本只写 ASCII」，也常需要落到中文目录（如 `产物\logs`）。
-直接写中文路径会被按 ANSI 读成乱码（`产物` → `浜х墿`），`Add-Content` 直接报「找不到路径」。
-做法：`$log = 'D:\AI\' + [char]0x4EA7 + [char]0x7269 + '\logs\x.txt'`（产=4EA7，物=7269）。
+即使守着「脚本只写 ASCII」，也常需要落到中文目录（如 `归档\`）。
+直接写中文路径会被按 ANSI 读成乱码（`归档` → `褰掓。`），`Add-Content` 直接报「找不到路径」。
+做法：`$log = 'D:\AI\' + [char]0x5F52 + [char]0x6863 + '\x.txt'`（归=5F52，档=6863）。
 
 - 清空并删目录：`robocopy 空目录 目标 /MIR` + `rd /s /q`
 - 找大文件：`.NET Directory.EnumerateFiles` 比 `Get-ChildItem -Recurse` 快很多
