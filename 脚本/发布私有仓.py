@@ -20,7 +20,7 @@ try:
 except Exception:
     pass
 
-PRIV = r"D:\个人\private"
+PRIV = r"D:\AI\private"
 
 # 这里的东西是唯一事实源，不该被"从别处复制"覆盖；列出来只是为了在报错时提示
 EXPECTED = ["状态.md", "任务.md", "决策记录", "凭据恢复.md"]
